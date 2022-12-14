@@ -30,7 +30,7 @@ async function run(){
         // mediaType: {
         //   format: 'diff'
         // }
-    });
+    }).then(console.log, console.log);
 
     console.log(pullRequestReviews);
     if(pullRequestReviews){
