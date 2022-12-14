@@ -3,57 +3,87 @@ const github = require('@actions/github');
 
 const context = github.context;
 
-
+function renderSlackMessageBody(headerText){
+    return {
+        "blocks": [
+          {
+            "type": "header",
+            "text": {
+              "type": "plain_text",
+              "text": headerText,
+              "emoji": true
+            }
+          },
+          {
+            "type": "divider"
+          },
+          {
+            "type": "section",
+            "text": {
+              "type": "mrkdwn",
+              "text": "*${{github.event.pull_request.title}}*\n\n`${{github.event.pull_request.head.ref}}` > `${{github.event.pull_request.base.ref}}`" // prTitle, baseRef, headRef
+            }
+          },
+          {
+            "type": "context",
+            "elements": [
+              {
+                "type": "mrkdwn",
+                "text": "PR author:"
+              },
+              {
+                "type": "plain_text",
+                "text": "${{github.event.pull_request.user.login}}", // prAuthor
+                "emoji": true
+              }
+            ]
+          },
+          {
+            "type": "divider"
+          },
+          {
+            "type": "section",
+            "fields": [
+              {
+                "type": "mrkdwn",
+                "text": "*Reviewed by:*\n${{github.actor}}" // prActor
+              },
+              {
+                "type": "mrkdwn",
+                "text": "*Link:*\n<${{github.event.pull_request._links.html.href}}|View PR>" // prLink
+              }
+            ]
+          },
+          {
+            "type": "divider"
+          },
+          {
+            "type": "section",
+            "text": {
+              "type": "mrkdwn",
+              "text": "*Comment:*\n${{steps.output_args.outputs.o_comment}}" // prCommentText
+            }
+          },
+          {
+            "type": "section",
+            "text": {
+              "type": "mrkdwn",
+              "text": "*Change request:*\n${{steps.output_args.outputs.o_change_request}}" // prChangeRequestText
+            }
+          }
+        ]
+      }
+}
 
 function getLastReview(reviews){
     if(reviews && reviews.length){
         return reviews[reviews.length-1]
     }
+    return {} // do better
 }
 
-function handleResponse(response){
-    console.log('REPONSE:')
-    console.log(response);
-    console.log('ENDREPONSE')
-    const lastReview = getLastReview(response.data);
-
-    console.log('REPONSE LAST REVIW:')
-    console.log(lastReview);
-    console.log('ENDREPONSE')
-
-    switch (lastReview.state) {
-        case 'CHANGES_REQUESTED':
-            core.setOutput('slackMessage', 'Output a slack template for CHANGES_REQUESTED')            
-            break;
-    
-        default:
-            break;
-    }
-    // core.setOutput('slackMessage', 'Output a slack template for CHANGES_REQUESTED')
-}
-
-
-async function run(){
-    // if: github.event_name == 'pull_request_review' && github.event.review.state != 'approved' && github.event.pull_request.base.ref == 'master'.
-    // if(context.eventName == 'pull_request_review' && context.)
-    // context.payload.pull_request.html_url
-    // core.notice('Running@111...')
-
-    // This should be a token with access to your repository scoped in as a secret.
-    // The YML workflow will need to set myToken with the GitHub Secret Token
-    // repoAccessToken: ${{ secrets.GITHUB_TOKEN }}
-    // https://help.github.com/en/actions/automating-your-workflow-with-github-actions/authenticating-with-the-github_token#about-the-github_token-secret
-    const repoAccessToken = core.getInput('repoAccessToken');
-    const pullNumber = core.getInput('pullNumber');
-    const repo = core.getInput('repo');
-    const owner = core.getInput('owner');
-
-    const octokit = github.getOctokit(repoAccessToken)
-
-    // You can also pass in additional options as a second parameter to getOctokit
-    // const octokit = github.getOctokit(myToken, {userAgent: "MyActionVersion1"});
-
-    /**
+function onGetPullRequest(pullRequestData){
+/**
      * 
      * 
      * 
@@ -101,14 +131,110 @@ async function run(){
      */
 
     // const { data: pullRequestReviews = [] } = await octokit.rest.pulls.listReviews({
-    const pullRequestReviews = await octokit.rest.pulls.listReviews({
+        octokit.rest.pulls.listReviews({
+            owner: owner,
+            repo: repo,
+            pull_number: pullNumber,
+            // mediaType: {
+            //   format: 'diff'
+            // }
+        }).then(onGetReviews, console.log); // remove for prod
+}
+
+function onGetReviews(reviews){
+    console.log('REPONSE:')
+    console.log(reviews);
+    console.log('ENDREPONSE')
+    const lastReview = getLastReview(reviews.data);
+
+    console.log('REPONSE LAST REVIW:')
+    console.log(lastReview);
+    console.log('ENDREPONSE')
+
+    /*
+    {
+        id: 1216329973,
+        node_id: 'PRR_kwDOIlNd3s5If7j1',
+        user: {
+            login: 'braddevelop',
+            id: 69210311,
+            node_id: 'MDQ6VXNlcjY5MjEwMzEx',
+            avatar_url: 'https://avatars.githubusercontent.com/u/69210311?u=6d2f0f7bf732135690f7b448c0f1f9a0b41e65f2&v=4',
+            gravatar_id: '',
+            url: 'https://api.github.com/users/braddevelop',
+            html_url: 'https://github.com/braddevelop',
+            followers_url: 'https://api.github.com/users/braddevelop/followers',
+            following_url: 'https://api.github.com/users/braddevelop/following{/other_user}',
+            gists_url: 'https://api.github.com/users/braddevelop/gists{/gist_id}',
+            starred_url: 'https://api.github.com/users/braddevelop/starred{/owner}{/repo}',
+            subscriptions_url: 'https://api.github.com/users/braddevelop/subscriptions',
+            organizations_url: 'https://api.github.com/users/braddevelop/orgs',
+            repos_url: 'https://api.github.com/users/braddevelop/repos',
+            events_url: 'https://api.github.com/users/braddevelop/events{/privacy}',
+            received_events_url: 'https://api.github.com/users/braddevelop/received_events',
+            type: 'User',
+            site_admin: false
+        },
+        body: 'suki CR',
+        state: 'CHANGES_REQUESTED',
+        html_url: 'https://github.com/braddevelop/ghworkflows-sandbox/pull/17#pullrequestreview-1216329973',
+        pull_request_url: 'https://api.github.com/repos/braddevelop/ghworkflows-sandbox/pulls/17',
+        author_association: 'OWNER',
+        _links: {
+            html: {
+            href: 'https://github.com/braddevelop/ghworkflows-sandbox/pull/17#pullrequestreview-1216329973'
+            },
+            pull_request: {
+            href: 'https://api.github.com/repos/braddevelop/ghworkflows-sandbox/pulls/17'
+            }
+        },
+        submitted_at: '2022-12-13T19:54:34Z',
+        commit_id: '476ca9b4857051e288a44df44c1872317f48fe5c'
+        }
+    */
+
+    switch (lastReview.state) {
+        case 'CHANGES_REQUESTED':
+            core.setOutput('slackMessage', renderSlackMessageBody(`:large_orange_diamond: PR reviewed : ${github.repo}`));
+            // core.setOutput('slackMessage', 'Output a slack template for CHANGES_REQUESTED')            
+            break;
+    
+        default:
+            break;
+    }
+}
+
+
+async function run(){
+    // if: github.event_name == 'pull_request_review' && github.event.review.state != 'approved' && github.event.pull_request.base.ref == 'master'.
+    // if(context.eventName == 'pull_request_review' && context.)
+    // context.payload.pull_request.html_url
+    // core.notice('Running@111...')
+
+    // This should be a token with access to your repository scoped in as a secret.
+    // The YML workflow will need to set myToken with the GitHub Secret Token
+    // repoAccessToken: ${{ secrets.GITHUB_TOKEN }}
+    // https://help.github.com/en/actions/automating-your-workflow-with-github-actions/authenticating-with-the-github_token#about-the-github_token-secret
+    const repoAccessToken = core.getInput('repoAccessToken');
+    const pullNumber = core.getInput('pullNumber');
+    const repo = core.getInput('repo');
+    const owner = core.getInput('owner');
+
+    const octokit = github.getOctokit(repoAccessToken)
+
+    octokit.rest.pulls.get({
         owner: owner,
         repo: repo,
         pull_number: pullNumber,
         // mediaType: {
         //   format: 'diff'
         // }
-    }).then(handleResponse, console.log); // remove for prod
+    }).then(onGetPullRequest, console.log); // remove for prod
+
+    // You can also pass in additional options as a second parameter to getOctokit
+    // const octokit = github.getOctokit(myToken, {userAgent: "MyActionVersion1"});
+
+    
 
    
 
