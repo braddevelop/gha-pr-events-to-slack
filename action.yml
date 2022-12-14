@@ -1,6 +1,13 @@
 name: 'Pull Request Events to Slack'
 description: 'Notifies Slack about Pull Request events'
-
+inputs:
+  repoAccessToken:
+    description: 'repoAccessToken'
+    required: true
+  pullNumber:
+    description: 'pullNumber'
+    required: false
+    default: '1'
 runs:
   using: "node16"
   pre: "pre.js"
