@@ -249,6 +249,44 @@ function onGetReviews(reviews){
 }
 
 
+
+
+class SlackBlocks {
+    static divider() {
+        return { "type": "divider" }
+    }
+
+    static section(text) {
+        return {
+            "type": "section",
+            "text": {
+              "type": "mrkdwn",
+              "text": text
+            }
+          }
+    }
+}
+
+class Comment {
+    constructor(name) {
+      this.name = name;
+      this.buildMessage()
+    }
+
+    blocks = [];
+  
+    
+    buildMessage() {
+        this.blocks.push(SlackBlocks.section("*[YES-001]*\n\n`foobar` > `master`"))
+        this.blocks.push(SlackBlocks.divider())
+    }
+    output() {
+        return { "blocks": this.blocks }
+    }
+}
+
+
+
 async function run(){
     // if: github.event_name == 'pull_request_review' && github.event.review.state != 'approved' && github.event.pull_request.base.ref == 'master'.
     // if(context.eventName == 'pull_request_review' && context.)
@@ -273,6 +311,15 @@ async function run(){
     // You can also pass in additional options as a second parameter to getOctokit
     // const octokit = github.getOctokit(myToken, {userAgent: "MyActionVersion1"});
 
+    getAllDataStreams()
+
+
+   
+
+    core.notice('Done...')
+}
+
+function getAllDataStreams(){
     const promise1 = octokit.rest.pulls.get({
         owner: owner,
         repo: repo,
@@ -291,15 +338,30 @@ async function run(){
             // }
         })
 
-    Promise.all([promise1, promise2]).then(data => {
-        const dataFromPromise1 = data[0]
-        const dataFromPromise2 = data[1]
-        console.log('success')
-    })
+    Promise.all([promise1, promise2]).then(streamsReceived, console.log)
+}
 
-   
+function streamsReceived(data){
+    const dataFromPromise1 = data[0]
+    const dataFromPromise2 = data[1]
 
-    core.notice('Done...')
+    outputMessage()
+}
+
+function outputMessage(){
+    
+
+    getMessageFromFactory(getTypeOfMessage())
+}
+
+function getTypeOfMessage(){
+    return 'COMMENT'
+}
+
+function getMessageFromFactory(type){
+    if(type=='COMMENT'){
+        return new Comment().output()
+    }
 }
 
 run();
