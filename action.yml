@@ -4,6 +4,12 @@ inputs:
   repoAccessToken:
     description: 'repoAccessToken'
     required: true
+  repo:
+    description: 'repo name'
+    required: true
+  owner:
+    description: 'owner of repo'
+    required: true
   pullNumber:
     description: 'pullNumber'
     required: false
