@@ -90,17 +90,17 @@ async function run(){
     }).then(console.log, console.log); // remove for prod
 
     console.log(pullRequestReviews);
-    const lastReview = getLastReview(pullRequestReviews.data);
+    // const lastReview = getLastReview(pullRequestReviews.data);
 
-    switch (lastReview.state) {
-        case 'CHANGES_REQUESTED':
-            core.setOutput('slackMessage', 'Output a slack template for CHANGES_REQUESTED')            
-            break;
+    // switch (lastReview.state) {
+    //     case 'CHANGES_REQUESTED':
+    //         core.setOutput('slackMessage', 'Output a slack template for CHANGES_REQUESTED')            
+    //         break;
     
-        default:
-            break;
-    }
-
+    //     default:
+    //         break;
+    // }
+    core.setOutput('slackMessage', 'Output a slack template for CHANGES_REQUESTED')
 
     core.notice('Done...')
 }
