@@ -79,7 +79,8 @@ async function run(){
   ]
      */
 
-    const { data: pullRequestReviews = [] } = await octokit.rest.pulls.listReviews({
+    // const { data: pullRequestReviews = [] } = await octokit.rest.pulls.listReviews({
+    const pullRequestReviews = await octokit.rest.pulls.listReviews({
         owner: owner,
         repo: repo,
         pull_number: pullNumber,
@@ -89,7 +90,7 @@ async function run(){
     }).then(console.log, console.log); // remove for prod
 
     console.log(pullRequestReviews);
-    const lastReview = getLastReview(pullRequestReviews);
+    const lastReview = getLastReview(pullRequestReviews.data);
 
     switch (lastReview.state) {
         case 'CHANGES_REQUESTED':
