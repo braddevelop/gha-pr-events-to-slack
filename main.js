@@ -15,17 +15,21 @@ function handleResponse(response){
     console.log('REPONSE:')
     console.log(response);
     console.log('ENDREPONSE')
-    // const lastReview = getLastReview(pullRequestReviews.data);
+    const lastReview = getLastReview(pullRequestReviews.data);
 
-    // switch (lastReview.state) {
-    //     case 'CHANGES_REQUESTED':
-    //         core.setOutput('slackMessage', 'Output a slack template for CHANGES_REQUESTED')            
-    //         break;
+    console.log('REPONSE LAST REVIW:')
+    console.log(lastReview);
+    console.log('ENDREPONSE')
+
+    switch (lastReview.state) {
+        case 'CHANGES_REQUESTED':
+            core.setOutput('slackMessage', 'Output a slack template for CHANGES_REQUESTED')            
+            break;
     
-    //     default:
-    //         break;
-    // }
-    core.setOutput('slackMessage', 'Output a slack template for CHANGES_REQUESTED')
+        default:
+            break;
+    }
+    // core.setOutput('slackMessage', 'Output a slack template for CHANGES_REQUESTED')
 }
 
 
