@@ -79,7 +79,7 @@ async function run(){
   ]
      */
 
-    const { data: pullRequestReviews } = await octokit.rest.pulls.listReviews({
+    const { data: pullRequestReviews = [] } = await octokit.rest.pulls.listReviews({
         owner: owner,
         repo: repo,
         pull_number: pullNumber,
