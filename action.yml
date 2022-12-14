@@ -1,0 +1,8 @@
+name: 'Pull Request Events to Slack'
+description: 'Notifies Slack about Pull Request events'
+
+runs:
+  using: "node16"
+  pre: "pre.js"
+  pre-if: runner.os == 'linux'
+  main: "main.js"
