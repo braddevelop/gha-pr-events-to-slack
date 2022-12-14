@@ -15,7 +15,7 @@ function handleResponse(response){
     console.log('REPONSE:')
     console.log(response);
     console.log('ENDREPONSE')
-    const lastReview = getLastReview(pullRequestReviews.data);
+    const lastReview = getLastReview(response.data);
 
     console.log('REPONSE LAST REVIW:')
     console.log(lastReview);
