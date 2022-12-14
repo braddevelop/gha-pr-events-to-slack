@@ -11,6 +11,21 @@ function getLastReview(reviews){
     }
 }
 
+function handleResponse(response){
+    console.log(response);
+    // const lastReview = getLastReview(pullRequestReviews.data);
+
+    // switch (lastReview.state) {
+    //     case 'CHANGES_REQUESTED':
+    //         core.setOutput('slackMessage', 'Output a slack template for CHANGES_REQUESTED')            
+    //         break;
+    
+    //     default:
+    //         break;
+    // }
+    core.setOutput('slackMessage', 'Output a slack template for CHANGES_REQUESTED')
+}
+
 
 async function run(){
     // if: github.event_name == 'pull_request_review' && github.event.review.state != 'approved' && github.event.pull_request.base.ref == 'master'.
@@ -87,20 +102,9 @@ async function run(){
         // mediaType: {
         //   format: 'diff'
         // }
-    }).then(console.log, console.log); // remove for prod
+    }).then(handleResponse, console.log); // remove for prod
 
-    console.log(pullRequestReviews);
-    // const lastReview = getLastReview(pullRequestReviews.data);
-
-    // switch (lastReview.state) {
-    //     case 'CHANGES_REQUESTED':
-    //         core.setOutput('slackMessage', 'Output a slack template for CHANGES_REQUESTED')            
-    //         break;
-    
-    //     default:
-    //         break;
-    // }
-    core.setOutput('slackMessage', 'Output a slack template for CHANGES_REQUESTED')
+   
 
     core.notice('Done...')
 }
