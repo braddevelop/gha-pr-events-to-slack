@@ -12,7 +12,9 @@ function getLastReview(reviews){
 }
 
 function handleResponse(response){
+    console.log('REPONSE:')
     console.log(response);
+    console.log('ENDREPONSE')
     // const lastReview = getLastReview(pullRequestReviews.data);
 
     // switch (lastReview.state) {
