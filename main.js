@@ -23,7 +23,8 @@ async function run(){
     // You can also pass in additional options as a second parameter to getOctokit
     // const octokit = github.getOctokit(myToken, {userAgent: "MyActionVersion1"});
 
-    const { data: pullRequestReviews } = await octokit.rest.pulls.listReviews({
+    // const { data: pullRequestReviews } = await octokit.rest.pulls.listReviews({
+    const pullRequestReviews = await octokit.rest.pulls.listReviews({
         owner: owner,
         repo: repo,
         pull_number: pullNumber,
