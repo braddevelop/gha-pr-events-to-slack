@@ -267,22 +267,26 @@ class SlackBlocks {
     }
 }
 
-class Comment {
-    constructor(name) {
-      this.name = name;
-      this.buildMessage()
+class SlackMessageTemplate {
+    blocks = [];
+    constructor() {
+        this.buildMessage()
     }
 
-    blocks = [];
-  
-    
-    buildMessage() {
-        this.blocks.push(SlackBlocks.section("*[YES-001]*\n\n`foobar` > `master`"))
-        this.blocks.push(SlackBlocks.divider())
-    }
     output() {
         return { "blocks": this.blocks }
     }
+}
+
+class Comment extends SlackMessageTemplate {
+    constructor() {
+      super()
+    }
+    
+    buildMessage() {
+        this.blocks.push(SlackBlocks.section("*[YES-002]*\n\n`foobar` > `master`"))
+        this.blocks.push(SlackBlocks.divider())
+    }    
 }
 
 
