@@ -2,6 +2,12 @@ const core = require('@actions/core')
 const github = require('@actions/github');
 
 const context = github.context;
+const repoAccessToken = core.getInput('repoAccessToken');
+const pullNumber = core.getInput('pullNumber');
+const repo = core.getInput('repo');
+const owner = core.getInput('owner');
+
+const octokit = github.getOctokit(repoAccessToken)
 
 function renderSlackMessageBody(headerText){
     return {
@@ -215,12 +221,7 @@ async function run(){
     // The YML workflow will need to set myToken with the GitHub Secret Token
     // repoAccessToken: ${{ secrets.GITHUB_TOKEN }}
     // https://help.github.com/en/actions/automating-your-workflow-with-github-actions/authenticating-with-the-github_token#about-the-github_token-secret
-    const repoAccessToken = core.getInput('repoAccessToken');
-    const pullNumber = core.getInput('pullNumber');
-    const repo = core.getInput('repo');
-    const owner = core.getInput('owner');
-
-    const octokit = github.getOctokit(repoAccessToken)
+    
 
     octokit.rest.pulls.get({
         owner: owner,
