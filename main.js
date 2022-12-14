@@ -88,8 +88,46 @@ function getLastReview(reviews){
     return {} // do better
 }
 
-function onGetPullRequest(pullRequestData){
+function onReceivePullRequestInfo(pullRequestInfo){
 /**
+
+    // see https://github.com/braddevelop/ghworkflows-sandbox/actions/runs/3694284483/jobs/6255292587 for full payload
+
+    number: 17,
+  state: 'open',
+  locked: false,
+  title: 'suki updates',
+
+  user: {
+    login: 'bravocollective',
+    id: 120184068,
+    avatar_url: 'https://avatars.githubusercontent.com/u/120184068?v=4',
+    url: 'https://api.github.com/users/bravocollective',
+    html_url: 'https://github.com/bravocollective',
+  },
+
+  body: null,
+  assignee: null,
+  assignees: [],
+  requested_reviewers: [],
+
+  head: {
+    label: 'braddevelop:suki',
+    ref: 'suki',
+    sha
+  }
+
+  base: {
+    label: 'braddevelop:master',
+    ref: 'master',
+    sha
+  }
+
+  merged: false,
+  merged_by: null,
+  comments: 0,
+  review_comments: 0,
+
      * 
      * 
      * 
@@ -201,7 +239,7 @@ function onGetReviews(reviews){
 
     switch (lastReview.state) {
         case 'CHANGES_REQUESTED':
-            core.setOutput('slackMessage', renderSlackMessageBody(`:large_orange_diamond: PR reviewed : ${github.repo}`));
+            core.setOutput('slackMessage', renderSlackMessageBody(`:large_orange_diamond: PR reviewed : ${repo}`));
             // core.setOutput('slackMessage', 'Output a slack template for CHANGES_REQUESTED')            
             break;
     
@@ -223,19 +261,41 @@ async function run(){
     // https://help.github.com/en/actions/automating-your-workflow-with-github-actions/authenticating-with-the-github_token#about-the-github_token-secret
     
 
-    octokit.rest.pulls.get({
+    // octokit.rest.pulls.get({
+    //     owner: owner,
+    //     repo: repo,
+    //     pull_number: pullNumber,
+    //     // mediaType: {
+    //     //   format: 'diff'
+    //     // }
+    // }).then(onReceivePullRequestInfo, console.log); // remove for prod
+
+    // You can also pass in additional options as a second parameter to getOctokit
+    // const octokit = github.getOctokit(myToken, {userAgent: "MyActionVersion1"});
+
+    const promise1 = octokit.rest.pulls.get({
         owner: owner,
         repo: repo,
         pull_number: pullNumber,
         // mediaType: {
         //   format: 'diff'
         // }
-    }).then(onGetPullRequest, console.log); // remove for prod
+    })
 
-    // You can also pass in additional options as a second parameter to getOctokit
-    // const octokit = github.getOctokit(myToken, {userAgent: "MyActionVersion1"});
+    const promise2 = octokit.rest.pulls.listReviews({
+            owner: owner,
+            repo: repo,
+            pull_number: pullNumber,
+            // mediaType: {
+            //   format: 'diff'
+            // }
+        })
 
-    
+    Promise.all([promise1, promise2]).then(data => {
+        const dataFromPromise1 = data[0]
+        const dataFromPromise2 = data[1]
+        console.log('success')
+    })
 
    
 
