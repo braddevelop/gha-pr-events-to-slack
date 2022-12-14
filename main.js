@@ -23,7 +23,7 @@ async function run(){
     // You can also pass in additional options as a second parameter to getOctokit
     // const octokit = github.getOctokit(myToken, {userAgent: "MyActionVersion1"});
 
-    const { data: pullRequest } = await octokit.rest.pulls.get({
+    const { data: pullRequestReviews } = await octokit.rest.pulls.listReviews({
         owner: owner,
         repo: repo,
         pull_number: pullNumber,
@@ -32,7 +32,13 @@ async function run(){
         // }
     });
 
-    console.log(pullRequest);
+    console.log(pullRequestReviews);
+    if(pullRequestReviews){
+        if(pullRequestReviews.length){
+            const lastReview = pullRequestReviews[pullRequestReviews.length-1]
+            console.log(lastReview)
+        }
+    }
     core.notice('Done...')
 }
 
