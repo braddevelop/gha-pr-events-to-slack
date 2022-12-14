@@ -15,6 +15,8 @@ async function run(){
     // https://help.github.com/en/actions/automating-your-workflow-with-github-actions/authenticating-with-the-github_token#about-the-github_token-secret
     const repoAccessToken = core.getInput('repoAccessToken');
     const pullNumber = core.getInput('pullNumber');
+    const repo = core.getInput('repo');
+    const owner = core.getInput('owner');
 
     const octokit = github.getOctokit(repoAccessToken)
 
@@ -22,8 +24,8 @@ async function run(){
     // const octokit = github.getOctokit(myToken, {userAgent: "MyActionVersion1"});
 
     const { data: pullRequest } = await octokit.rest.pulls.get({
-        // owner: 'octokit',
-        // repo: 'rest.js',
+        owner: owner,
+        repo: repo,
         pull_number: pullNumber,
         // mediaType: {
         //   format: 'diff'
