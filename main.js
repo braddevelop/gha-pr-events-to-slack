@@ -9,6 +9,8 @@ const owner = core.getInput('owner');
 
 const octokit = github.getOctokit(repoAccessToken)
 
+const prdata = {context:{},reviews:{}}
+
 function renderSlackMessageBody(headerText){
     return {
         "blocks": [
@@ -278,20 +280,47 @@ class SlackMessageTemplate {
     }
 }
 
-class Comment extends SlackMessageTemplate {
+class PRReviewComment extends SlackMessageTemplate {
     constructor() {
       super()
     }
     
     buildMessage() {
-        this.blocks.push(SlackBlocks.section("*[YES-002]*\n\n`foobar` > `master`"))
+        this.blocks.push(SlackBlocks.section("*[PRReviewComment]*\n\n`foobar` > `master`"))
         this.blocks.push(SlackBlocks.divider())
+    }    
+}
+
+
+class PRReviewChangeRequest extends SlackMessageTemplate {
+    constructor() {
+      super()
+    }
+    
+    buildMessage() {
+        this.blocks.push(SlackBlocks.section("*[PRReviewChangeRequest]*\n\n`foobar` > `master`"))
+        this.blocks.push(SlackBlocks.divider())
+    }    
+}
+
+class UnknownMessage extends SlackMessageTemplate {
+    constructor() {
+      super()
+    }
+    
+    buildMessage() {
+        this.blocks.push(SlackBlocks.section("*[UnknownMessage]*"))
     }    
 }
 
 
 
 async function run(){
+
+    console.log("github.context:")
+    console.log(github.context)
+    console.log("END github.context:")
+
     // if: github.event_name == 'pull_request_review' && github.event.review.state != 'approved' && github.event.pull_request.base.ref == 'master'.
     // if(context.eventName == 'pull_request_review' && context.)
     // context.payload.pull_request.html_url
@@ -346,25 +375,45 @@ function getAllDataStreams(){
 }
 
 function streamsReceived(data){
-    const dataFromPromise1 = data[0]
-    const dataFromPromise2 = data[1]
+    // const dataFromPromise1 = data[0]
+    // const dataFromPromise2 = data[1]
+    prdata.context = data[0]
+    prdata.reviews = data[1]
 
     outputMessage()
 }
 
 function outputMessage(){
     
-    core.setOutput('slackMessage',getMessageFromFactory(getTypeOfMessage()));
+    core.setOutput('slackMessage',getMessageFromFactory(getTypeOfMessage(prdata.context, prdata.reviews)));
     
 }
 
-function getTypeOfMessage(){
-    return 'COMMENT'
+function getTypeOfMessage(prContext, prReviews){
+
+    if(prContext.merged){
+        return 'MERGED'
+    }
+
+    let lastReview = getLastReview(prReviews)
+
+    if(lastReview && lastReview.hasOwnProperty('state')){
+        return lastReview.state
+    }
+    
+    return 'UNKNOWN'
 }
 
 function getMessageFromFactory(type){
-    if(type=='COMMENT'){
-        return new Comment().output()
+    switch (type) {
+        case 'COMMENT':
+            return new PRReviewComment().output()
+        case 'CHANGES_REQUESTED':
+                return new PRReviewChangeRequest().output()
+        
+        default:
+            return new UnknownMessage().output()
+
     }
 }
 
