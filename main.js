@@ -350,8 +350,8 @@ function streamsReceived(data){
 
 function outputMessage(){
     
-
-    getMessageFromFactory(getTypeOfMessage())
+    core.setOutput('slackMessage',getMessageFromFactory(getTypeOfMessage()));
+    
 }
 
 function getTypeOfMessage(){
