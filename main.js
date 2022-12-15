@@ -14,7 +14,7 @@ const prdata = {context:{},reviews:{}}
 const PR_STATES = {
     APPROVED:'APPROVED',
     CHANGES_REQUESTED:'CHANGES_REQUESTED',
-    COMMENT:'COMMENT',
+    COMMENTED:'COMMENTED',
     MERGED:'MERGED',
     UNKNOWN:'UNKNOWN',
 }
@@ -22,7 +22,7 @@ const PR_STATES = {
 const EMOJIS = {
     APPROVED:':large_green_circle:',
     CHANGES_REQUESTED:':large_orange_diamond:',
-    COMMENT:':white_medium_square:',
+    COMMENTED:':white_medium_square:',
     MERGED:':checkered_flag:',
     UNKNOWN:':hankey:',
 }
@@ -406,7 +406,7 @@ class PRReviewComment extends SlackMessageTemplate {
     buildMessage() {
 
         // Add message title
-        let title = `${EMOJIS.COMMENT} PR reviewed : ${getRepositoryNameOnly()}`
+        let title = `${EMOJIS.COMMENTED} PR reviewed : ${getRepositoryNameOnly()}`
         this.blocks.push(
             SlackBlocks.messageTitle(title)
         );
@@ -799,7 +799,7 @@ function getTypeOfMessage(prContext, prReviews){
 
 function getMessageFromFactory(type){
     switch (type) {
-        case PR_STATES.COMMENT:
+        case PR_STATES.COMMENTED:
             return new PRReviewComment().output()
         case PR_STATES.CHANGES_REQUESTED:
             return new PRReviewChangeRequest().output()
