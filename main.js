@@ -501,7 +501,6 @@ class UnknownMessage extends SlackMessageTemplate {
 
 
 async function run(){
-github.context.payload.repository.full_name
     /**
      * github.context log:
      * 
@@ -791,6 +790,7 @@ function getTypeOfMessage(prContext, prReviews){
     console.groupEnd()
 
     if(lastReview){
+        console.log('returning :', lastReview.state)
         return lastReview.state
     }
     
@@ -798,6 +798,14 @@ function getTypeOfMessage(prContext, prReviews){
 }
 
 function getMessageFromFactory(type){
+    console.group("getMessageFromFactory() - what is the value of type")
+    console.log(type)
+    console.groupEnd()
+
+    console.group("PR_STATES")
+    console.log(PR_STATES)
+    console.groupEnd()
+    
     switch (type) {
         case PR_STATES.COMMENTED:
             return new PRReviewComment().output()
