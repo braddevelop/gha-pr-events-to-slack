@@ -20,17 +20,17 @@ const PR_STATES = {
 }
 
 const PR_STATES_COLOURS = {
-    APPROVED:'#2bff36',
+    APPROVED:'#4dd654',
     CHANGES_REQUESTED:'#ffc403',
     COMMENTED:'#e6e6e6',
-    MERGED:'#003006',
+    MERGED:'#4dd69d',
     UNKNOWN:'#967800',
 }
 
 const EMOJIS = {
     APPROVED:':large_green_circle:',
     CHANGES_REQUESTED:':large_orange_diamond:',
-    COMMENTED:':white_medium_square:',
+    COMMENTED:':left_speech_bubble:',
     MERGED:':checkered_flag:',
     UNKNOWN:':hankey:',
 }
@@ -438,7 +438,7 @@ class SlackMessageTemplate {
         this.footer.push(
             {
                 "color": statusColour,
-                "author_name": `${actorActionText}${getLastReview(prdata.reviews).user.login}`,
+                "author_name": `${actorActionText} ${getLastReview(prdata.reviews).user.login}`,
                 "author_link": getLastReview(prdata.reviews).user.html_url,
                 "author_icon": getLastReview(prdata.reviews).user.avatar_url,
                 "title": "View pull request",
@@ -494,7 +494,7 @@ class PRReviewChangeRequest extends SlackMessageTemplate {
 
         // Add actor comment
         this.blocks.push(
-            SlackBlocks.reviewText(`*Change request:*\n${getLastReview(prdata.reviews).body || "No comment was left"}`)
+            SlackBlocks.reviewText(`*Request:*\n${getLastReview(prdata.reviews).body || "No comment was left"}`)
         )
 
         super.buildCommonFooter(PR_STATES_COLOURS.CHANGES_REQUESTED, "Changes requested by")
