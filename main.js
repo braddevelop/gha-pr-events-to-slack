@@ -775,7 +775,9 @@ function outputMessage(){
 }
 
 function getTypeOfMessage(prContext, prReviews){
-
+    console.group("prcontext")
+    console.log(prContext)
+    console.groupEnd()
     if(prContext.merged){
         return PR_STATES.MERGED
     }
