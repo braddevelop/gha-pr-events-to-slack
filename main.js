@@ -27,8 +27,34 @@ const EMOJIS = {
     UNKNOWN:':hankey:',
 }
 
+// https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/Wikipedia-logo-v2.svg/225px-Wikipedia-logo-v2.svg.png
 function renderSlackMessageBody(headerText){
     return {
+        "attachments": [
+            {
+                "fallback": "Fallback : Plain-text summary of the attachment.",
+                "color": "#FF0066",
+                "pretext": "Optional text that appears above the attachment block",
+                "author_name": "Bobby Tables",
+                "author_link": "http://flickr.com/bobby/",
+                "author_icon": "https://avatars.githubusercontent.com/u/120184068?v=4",
+                "title": "Slack API Documentation",
+                "title_link": "https://api.slack.com/",
+                "text": "Optional text that appears within the attachment 222",
+                "fields": [
+                    {
+                        "title": "Priority",
+                        "value": "High",
+                        "short": false
+                    }
+                ],
+                // "image_url": "http://my-website.com/path/to/image.jpg",
+                // "thumb_url": "http://example.com/path/to/thumb.png",
+                "footer": "Slack API",
+                "footer_icon": "https://platform.slack-edge.com/img/default_application_icon.png",
+                // "ts": 123456789
+            }
+        ],
         "blocks": [
           {
             "type": "header",
