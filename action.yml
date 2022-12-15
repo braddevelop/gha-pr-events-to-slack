@@ -5,11 +5,11 @@ inputs:
     description: 'repoAccessToken'
     required: true
   repo:
-    description: 'repo name'
+    description: 'repo name with owner in the front'
     required: true
-  owner:
-    description: 'owner of repo'
-    required: true
+  # owner:
+  #   description: 'owner of repo'
+  #   required: true
   pullNumber:
     description: 'pullNumber'
     required: false

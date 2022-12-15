@@ -291,7 +291,7 @@ class SlackBlocks { // todo more specfici name
             "type": "section",
             "text": {
               "type": "mrkdwn",
-              "text": `*${title}*\n\n\`${headRef}\` > \`${baseRef}\``
+              "text": `*${title}*\n\n\`${headRef}\` -> \`${baseRef}\``
             }
         }
     }
@@ -606,9 +606,13 @@ github.context.payload.repository.full_name
 }
 
 function getAllDataStreams(){
+
+    
+    
+
     const promise1 = octokit.rest.pulls.get({
-        owner: owner,
-        repo: repo,
+        owner: getAccountOwner(),
+        repo: getRepositoryFullName(),
         pull_number: pullNumber,
         // mediaType: {
         //   format: 'diff'
@@ -616,8 +620,8 @@ function getAllDataStreams(){
     })
 
     const promise2 = octokit.rest.pulls.listReviews({
-            owner: owner,
-            repo: repo,
+            owner: getAccountOwner(),
+            repo: getRepositoryFullName(),
             pull_number: pullNumber,
             // mediaType: {
             //   format: 'diff'
@@ -800,10 +804,14 @@ function getMessageFromFactory(type){
 }
 
 function getRepositoryFullName(){
-    return github.context.payload.repository.full_name
+    // return github.context.payload.repository.full_name
+    return repo
 }
 function getRepositoryNameOnly(){
-    return github.context.payload.repository.full_name.split('/')[1];
+    return repo.split('/')[1];
+}
+function getAccountOwner(){
+    return repo.split('/')[0];
 }
 
 run();
