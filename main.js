@@ -415,7 +415,7 @@ class PRReviewComment extends SlackMessageTemplate {
 
         // Add actor comment
         this.blocks.push(
-            SlackBlocks.reviewText(`*Comment:*\n${getLastReview(prdata.reviews).body}`)
+            SlackBlocks.reviewText(`*Comment:*\n${getLastReview(prdata.reviews).body || "No comment was left"}`)
         )
 
     }    
@@ -438,7 +438,7 @@ class PRReviewChangeRequest extends SlackMessageTemplate {
 
         // Add actor comment
         this.blocks.push(
-            SlackBlocks.reviewText(`*Change request:*\n${getLastReview(prdata.reviews).body}`)
+            SlackBlocks.reviewText(`*Change request:*\n${getLastReview(prdata.reviews).body || "No comment was left"}`)
         )
     }    
 }
@@ -459,7 +459,7 @@ class PRApproved extends SlackMessageTemplate {
 
         // Add actor comment
         this.blocks.push(
-            SlackBlocks.reviewText(`*Comment:*\n${getLastReview(prdata.reviews).body}`)
+            SlackBlocks.reviewText(`*Comment:*\n${getLastReview(prdata.reviews).body || "No comment was left"}`)
         )
     }    
 }
@@ -778,7 +778,7 @@ function getTypeOfMessage(prContext, prReviews){
     console.group("prcontext")
     console.log(prContext)
     console.groupEnd()
-    if(prContext.merged){
+    if(prContext.data.merged){
         return PR_STATES.MERGED
     }
 
