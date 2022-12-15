@@ -785,7 +785,12 @@ function getTypeOfMessage(prContext, prReviews){
     console.group("lastReview")
     console.log(lastReview)
     console.groupEnd()
-    if(lastReview && lastReview.hasOwnProperty('state')){
+
+    console.group("TEST: lastReview.hasOwnProperty('state')")
+    console.log(lastReview.hasOwnProperty('state'))
+    console.groupEnd()
+
+    if(lastReview){
         return lastReview.state
     }
     
