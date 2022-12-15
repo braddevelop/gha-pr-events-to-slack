@@ -489,7 +489,11 @@ class UnknownMessage extends SlackMessageTemplate {
     }
     
     buildMessage() {
-        this.blocks.push(SlackBlocks.section("*[UnknownMessage]*"))
+        // Add message title
+        let title = `${EMOJIS.UNKNOWN} Unknown PR event : ${getRepositoryNameOnly()}`
+        this.blocks.push(
+            SlackBlocks.messageTitle(title)
+        );
         // todo - pass some context about the PR so this can be troubleshoot'd
     }    
 }
