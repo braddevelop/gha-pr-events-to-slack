@@ -291,7 +291,7 @@ class SlackBlocks { // todo more specfici name
             "type": "section",
             "text": {
               "type": "mrkdwn",
-              "text": `*${title}*\n\n\`${headRef}\` > \`${baseRef}`
+              "text": `*${title}*\n\n\`${headRef}\` > \`${baseRef}\``
             }
         }
     }
