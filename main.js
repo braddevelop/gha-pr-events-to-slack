@@ -133,7 +133,7 @@ class SlackMessageBase {
         this.footer.push(
             {
                 "color": statusColour,
-                "author_name": `${actorActionText} ${getLastReview(pullRequestData.reviews).user.login}`,
+                "author_name": `${actorActionText} ${getLastReview(pullRequestData.reviews).user.login}`, //
                 "author_link": getLastReview(pullRequestData.reviews).user.html_url,
                 "author_icon": getLastReview(pullRequestData.reviews).user.avatar_url,
                 "title": "View pull request",
@@ -279,6 +279,10 @@ function getLastReview(reviews){
     return {}
 }
 
+function getTriggeringActor(){
+
+}
+
 /**
  * Pull Request information requests
  */
@@ -301,8 +305,15 @@ function requestDataForPullRequest(){
 
 function pullRequestDataReceived(data){
     pullRequestData.context = data[0]
-    pullRequestData.reviews = data[1].data
+    pullRequestData.reviews = data[1].datac
 
+    console.group("prcontext")
+    console.log(pullRequestData.context)
+    console.groupEnd()
+
+    console.group("prreview data")
+    console.log(pullRequestData.reviews)
+    console.groupEnd()
     outputMessage()
 }
 
