@@ -448,7 +448,7 @@ class SlackMessageTemplate {
     }
 
     output() {
-        return { "attachments": this.attachments, "blocks": this.blocks }
+        return { "attachments": this.footer, "blocks": this.blocks }
     }
 }
 
