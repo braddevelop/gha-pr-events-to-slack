@@ -612,7 +612,7 @@ function getAllDataStreams(){
 
     const promise1 = octokit.rest.pulls.get({
         owner: getAccountOwner(),
-        repo: getRepositoryFullName(),
+        repo: getRepositoryNameOnly(),
         pull_number: pullNumber,
         // mediaType: {
         //   format: 'diff'
@@ -621,7 +621,7 @@ function getAllDataStreams(){
 
     const promise2 = octokit.rest.pulls.listReviews({
             owner: getAccountOwner(),
-            repo: getRepositoryFullName(),
+            repo: getRepositoryNameOnly(),
             pull_number: pullNumber,
             // mediaType: {
             //   format: 'diff'
