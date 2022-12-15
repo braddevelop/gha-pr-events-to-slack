@@ -321,6 +321,7 @@ async function run(){
     console.log(github.context)
     console.log("END github.context:")
 
+
     // if: github.event_name == 'pull_request_review' && github.event.review.state != 'approved' && github.event.pull_request.base.ref == 'master'.
     // if(context.eventName == 'pull_request_review' && context.)
     // context.payload.pull_request.html_url
@@ -374,11 +375,19 @@ function getAllDataStreams(){
     Promise.all([promise1, promise2]).then(streamsReceived, console.log)
 }
 
+
 function streamsReceived(data){
     // const dataFromPromise1 = data[0]
     // const dataFromPromise2 = data[1]
     prdata.context = data[0]
     prdata.reviews = data[1]
+
+    
+    console.log('test group log')
+    console.group("prdata")
+    console.log(prdata)
+    console.groupEnd()
+    console.log('END:test group log')
 
     outputMessage()
 }
@@ -392,11 +401,14 @@ function outputMessage(){
 function getTypeOfMessage(prContext, prReviews){
 
     if(prContext.merged){
+        console.warn("getTypeOfMessage() prContext.merged == true:")
         return 'MERGED'
     }
 
     let lastReview = getLastReview(prReviews)
-
+    console.log('lastReview')
+    console.log(lastReview)
+    console.log('END:lastReview')
     if(lastReview && lastReview.hasOwnProperty('state')){
         return lastReview.state
     }
@@ -409,11 +421,9 @@ function getMessageFromFactory(type){
         case 'COMMENT':
             return new PRReviewComment().output()
         case 'CHANGES_REQUESTED':
-                return new PRReviewChangeRequest().output()
-        
+            return new PRReviewChangeRequest().output()
         default:
             return new UnknownMessage().output()
-
     }
 }
 
