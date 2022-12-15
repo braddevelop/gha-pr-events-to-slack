@@ -19,6 +19,14 @@ const PR_STATES = {
     UNKNOWN:'UNKNOWN',
 }
 
+const PR_STATES_COLOURS = {
+    APPROVED:'#2bff36',
+    CHANGES_REQUESTED:'#ffc403',
+    COMMENTED:'#e6e6e6',
+    MERGED:'#003006',
+    UNKNOWN:'#967800',
+}
+
 const EMOJIS = {
     APPROVED:':large_green_circle:',
     CHANGES_REQUESTED:':large_orange_diamond:',
@@ -315,21 +323,21 @@ class SlackBlocks { // todo more specfici name
         }
     }
 
-    static actorAndLink(eventActorText, prUrl){ // todo no abbreviations
-        return {
-            "type": "section",
-            "fields": [
-              {
-                "type": "mrkdwn",
-                "text": eventActorText
-              },
-              {
-                "type": "mrkdwn",
-                "text": `*Link:*\n<${prUrl}|View PR>`
-              }
-            ]
-        }
-    }
+    // static actorAndLink(eventActorText, prUrl){ // todo no abbreviations
+    //     return {
+    //         "type": "section",
+    //         "fields": [
+    //           {
+    //             "type": "mrkdwn",
+    //             "text": eventActorText
+    //           },
+    //           {
+    //             "type": "mrkdwn",
+    //             "text": `*Link:*\n<${prUrl}|View PR>`
+    //           }
+    //         ]
+    //     }
+    // }
 
     static reviewText(text){
         return {
@@ -359,11 +367,43 @@ class SlackBlocks { // todo more specfici name
     // }
 }
 
+
+
+// "attachments": [
+//     {
+//         "fallback": "Fallback : Plain-text summary of the attachment.",
+//         "color": "#FF0066",
+//         "pretext": "Optional text that appears above the attachment block",
+//         "author_name": "Bobby Tables",
+//         "author_link": "http://flickr.com/bobby/",
+//         "author_icon": "https://avatars.githubusercontent.com/u/120184068?v=4",
+//         "title": "Slack API Documentation",
+//         "title_link": "https://api.slack.com/",
+//         "text": "Optional text that appears within the attachment 222",
+//         "fields": [
+//             {
+//                 "title": "Priority",
+//                 "value": "High",
+//                 "short": false
+//             }
+//         ],
+//          "image_url": "http://my-website.com/path/to/image.jpg",
+//          "thumb_url": "http://example.com/path/to/thumb.png",
+//         "footer": "Slack API",
+//         "footer_icon": "https://platform.slack-edge.com/img/default_application_icon.png",
+//          "ts": 123456789
+//     }
+// ]
+
 class SlackMessageTemplate {
     blocks = [];
+    footer = [];
     constructor() {
         this.buildMessage()
     }
+
+    buildMessage(){}
+
 
     buildCommonMessageBody(){
         this.blocks.push(SlackBlocks.divider())
@@ -385,42 +425,30 @@ class SlackMessageTemplate {
         this.blocks.push(SlackBlocks.divider())
 
         // Add PR actor and link to PR
-        let actorText = `*Reviewed by:*\n${getLastReview(prdata.reviews).user.login}`
-        this.blocks.push(
-            SlackBlocks.actorAndLink(
-                actorText, 
-                prdata.context.data.html_url
-            )
-        )
+        // let actorText = `*Reviewed by:*\n${getLastReview(prdata.reviews).user.login}`
+        // this.blocks.push(
+        //     SlackBlocks.actorAndLink(
+        //         actorText, 
+        //         prdata.context.data.html_url
+        //     )
+        // )
+    }
 
+    buildCommonFooter(statusColour, actorActionText){
+        this.footer.push(
+            {
+                "color": statusColour,
+                "author_name": `${actorActionText}${getLastReview(prdata.reviews).user.login}`,
+                "author_link": getLastReview(prdata.reviews).user.html_url,
+                "author_icon": getLastReview(prdata.reviews).user.avatar_url,
+                "title": "View pull request",
+                "title_link": prdata.context.data.html_url,
+            }
+        )
     }
 
     output() {
-        return { "attachments": [
-            {
-                "fallback": "Fallback : Plain-text summary of the attachment.",
-                "color": "#FF0066",
-                "pretext": "Optional text that appears above the attachment block",
-                "author_name": "Bobby Tables",
-                "author_link": "http://flickr.com/bobby/",
-                "author_icon": "https://avatars.githubusercontent.com/u/120184068?v=4",
-                "title": "Slack API Documentation",
-                "title_link": "https://api.slack.com/",
-                "text": "Optional text that appears within the attachment 222",
-                "fields": [
-                    {
-                        "title": "Priority",
-                        "value": "High",
-                        "short": false
-                    }
-                ],
-                // "image_url": "http://my-website.com/path/to/image.jpg",
-                // "thumb_url": "http://example.com/path/to/thumb.png",
-                "footer": "Slack API",
-                "footer_icon": "https://platform.slack-edge.com/img/default_application_icon.png",
-                // "ts": 123456789
-            }
-        ],"blocks": this.blocks }
+        return { "attachments": this.attachments, "blocks": this.blocks }
     }
 }
 
@@ -432,7 +460,7 @@ class PRReviewComment extends SlackMessageTemplate {
     buildMessage() {
 
         // Add message title
-        let title = `${EMOJIS.COMMENTED} PR reviewed : ${getRepositoryNameOnly()}`
+        let title = `${EMOJIS.COMMENTED} Pull Request: Comment - ${getRepositoryNameOnly()}`
         this.blocks.push(
             SlackBlocks.messageTitle(title)
         );
@@ -443,6 +471,8 @@ class PRReviewComment extends SlackMessageTemplate {
         this.blocks.push(
             SlackBlocks.reviewText(`*Comment:*\n${getLastReview(prdata.reviews).body || "No comment was left"}`)
         )
+
+        super.buildCommonFooter(PR_STATES_COLOURS.COMMENTED, "Reviewed by")
 
     }    
 }
@@ -455,7 +485,7 @@ class PRReviewChangeRequest extends SlackMessageTemplate {
     
     buildMessage() {
         // Add message title
-        let title = `${EMOJIS.CHANGES_REQUESTED} PR changes requested : ${getRepositoryNameOnly()}`
+        let title = `${EMOJIS.CHANGES_REQUESTED} Pull Request: Change Requested - ${getRepositoryNameOnly()}`
         this.blocks.push(
             SlackBlocks.messageTitle(title)
         );
@@ -466,6 +496,8 @@ class PRReviewChangeRequest extends SlackMessageTemplate {
         this.blocks.push(
             SlackBlocks.reviewText(`*Change request:*\n${getLastReview(prdata.reviews).body || "No comment was left"}`)
         )
+
+        super.buildCommonFooter(PR_STATES_COLOURS.CHANGES_REQUESTED, "Changes requested by")
     }    
 }
 
@@ -476,7 +508,7 @@ class PRApproved extends SlackMessageTemplate {
     
     buildMessage() {
         // Add message title
-        let title = `${EMOJIS.APPROVED} PR Approved : ${getRepositoryNameOnly()}`
+        let title = `${EMOJIS.APPROVED} Pull Request: Approved - ${getRepositoryNameOnly()}`
         this.blocks.push(
             SlackBlocks.messageTitle(title)
         );
@@ -487,6 +519,8 @@ class PRApproved extends SlackMessageTemplate {
         this.blocks.push(
             SlackBlocks.reviewText(`*Comment:*\n${getLastReview(prdata.reviews).body || "No comment was left"}`)
         )
+
+        super.buildCommonFooter(PR_STATES_COLOURS.APPROVED, "Approved by")
     }    
 }
 
@@ -498,12 +532,14 @@ class PRMerged extends SlackMessageTemplate {
     
     buildMessage() {
         // Add message title
-        let title = `${EMOJIS.MERGED} PR merged : ${getRepositoryNameOnly()}`
+        let title = `${EMOJIS.MERGED} Pull Request: Merged - ${getRepositoryNameOnly()}`
         this.blocks.push(
             SlackBlocks.messageTitle(title)
         );
 
         super.buildCommonMessageBody()
+
+        super.buildCommonFooter(PR_STATES_COLOURS.MERGED, "Merged by")
     }    
 }
 
