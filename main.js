@@ -11,6 +11,22 @@ const octokit = github.getOctokit(repoAccessToken)
 
 const prdata = {context:{},reviews:{}}
 
+const PR_STATES = {
+    APPROVED:'APPROVED',
+    CHANGES_REQUESTED:'CHANGES_REQUESTED',
+    COMMENT:'COMMENT',
+    MERGED:'MERGED',
+    UNKNOWN:'UNKNOWN',
+}
+
+const EMOJIS = {
+    APPROVED:':large_green_circle:',
+    CHANGES_REQUESTED:':large_orange_diamond:',
+    COMMENT:':white_medium_square:',
+    MERGED:':checkered_flag:',
+    UNKNOWN:':hankey:',
+}
+
 function renderSlackMessageBody(headerText){
     return {
         "blocks": [
@@ -197,6 +213,7 @@ function onGetReviews(reviews){
     console.log(lastReview);
     console.log('ENDREPONSE')
 
+
     /*
     {
         id: 1216329973,
@@ -240,7 +257,7 @@ function onGetReviews(reviews){
     */
 
     switch (lastReview.state) {
-        case 'CHANGES_REQUESTED':
+        case PR_STATES.CHANGES_REQUESTED:
             core.setOutput('slackMessage', renderSlackMessageBody(`:large_orange_diamond: PR reviewed : ${repo}`));
             // core.setOutput('slackMessage', 'Output a slack template for CHANGES_REQUESTED')            
             break;
@@ -253,26 +270,127 @@ function onGetReviews(reviews){
 
 
 
-class SlackBlocks {
+class SlackBlocks { // todo more specfici name
     static divider() {
         return { "type": "divider" }
     }
 
-    static section(text) {
+    static messageTitle(titleText){
+        return {
+            "type": "header",
+            "text": {
+              "type": "plain_text",
+              "text": titleText,
+              "emoji": true
+            }
+        }
+    }
+
+    static prTitleAndRefs(title, baseRef, headRef) {
+        return {
+            "type": "section",
+            "text": {
+              "type": "mrkdwn",
+              "text": `*${title}*\n\n\`${headRef}\` > \`${baseRef}`
+            }
+        }
+    }
+
+    static prAuthor(authorText){
+        return {
+            "type": "context",
+            "elements": [
+              {
+                "type": "mrkdwn",
+                "text": "PR author:"
+              },
+              {
+                "type": "plain_text",
+                "text": authorText,
+                "emoji": true
+              }
+            ]
+        }
+    }
+
+    static actorAndLink(eventActorText, prUrl){ // todo no abbreviations
+        return {
+            "type": "section",
+            "fields": [
+              {
+                "type": "mrkdwn",
+                "text": eventActorText
+              },
+              {
+                "type": "mrkdwn",
+                "text": `*Link:*\n<${prUrl}|View PR>`
+              }
+            ]
+        }
+    }
+
+    static reviewText(text){
         return {
             "type": "section",
             "text": {
               "type": "mrkdwn",
               "text": text
             }
-          }
+        }
     }
+
+    // static context(primaryText, secondaryText){
+    //     return {
+    //         "type": "context",
+    //         "elements": [
+    //           {
+    //             "type": "mrkdwn",
+    //             "text": primaryText
+    //           },
+    //           {
+    //             "type": "plain_text",
+    //             "text": secondaryText,
+    //             "emoji": true
+    //           }
+    //         ]
+    //     }
+    // }
 }
 
 class SlackMessageTemplate {
     blocks = [];
     constructor() {
         this.buildMessage()
+    }
+
+    buildCommonMessageBody(){
+        this.blocks.push(SlackBlocks.divider())
+
+        // Add PR Title and refs
+        this.blocks.push(
+            SlackBlocks.prTitleAndRefs(
+                prdata.context.data.title, 
+                prdata.context.data.base.ref, 
+                prdata.context.data.head.ref
+            )
+        );
+
+        // Add PR author
+        this.blocks.push(
+            SlackBlocks.prAuthor(prdata.context.data.user.login)
+        )
+
+        this.blocks.push(SlackBlocks.divider())
+
+        // Add PR actor and link to PR
+        let actorText = `*Reviewed by:*\n${getLastReview(prdata.reviews).user.login}`
+        this.blocks.push(
+            SlackBlocks.actorAndLink(
+                actorText, 
+                prdata.context.data.html_url
+            )
+        )
+
     }
 
     output() {
@@ -286,8 +404,20 @@ class PRReviewComment extends SlackMessageTemplate {
     }
     
     buildMessage() {
-        this.blocks.push(SlackBlocks.section("*[PRReviewComment]*\n\n`foobar` > `master`"))
-        this.blocks.push(SlackBlocks.divider())
+
+        // Add message title
+        let title = `${EMOJIS.COMMENT} PR reviewed : ${getRepositoryNameOnly()}`
+        this.blocks.push(
+            SlackBlocks.messageTitle(title)
+        );
+
+        super.buildCommonMessageBody();
+
+        // Add actor comment
+        this.blocks.push(
+            SlackBlocks.reviewText(`*Comment:*\n${getLastReview(prdata.reviews).body}`)
+        )
+
     }    
 }
 
@@ -298,10 +428,60 @@ class PRReviewChangeRequest extends SlackMessageTemplate {
     }
     
     buildMessage() {
-        this.blocks.push(SlackBlocks.section("*[PRReviewChangeRequest]*\n\n`foobar` > `master`"))
-        this.blocks.push(SlackBlocks.divider())
+        // Add message title
+        let title = `${EMOJIS.CHANGES_REQUESTED} PR changes requested : ${getRepositoryNameOnly()}`
+        this.blocks.push(
+            SlackBlocks.messageTitle(title)
+        );
+
+        super.buildCommonMessageBody();
+
+        // Add actor comment
+        this.blocks.push(
+            SlackBlocks.reviewText(`*Change request:*\n${getLastReview(prdata.reviews).body}`)
+        )
     }    
 }
+
+class PRApproved extends SlackMessageTemplate {
+    constructor() {
+      super()
+    }
+    
+    buildMessage() {
+        // Add message title
+        let title = `${EMOJIS.APPROVED} PR Approved : ${getRepositoryNameOnly()}`
+        this.blocks.push(
+            SlackBlocks.messageTitle(title)
+        );
+
+        super.buildCommonMessageBody()
+
+        // Add actor comment
+        this.blocks.push(
+            SlackBlocks.reviewText(`*Comment:*\n${getLastReview(prdata.reviews).body}`)
+        )
+    }    
+}
+
+
+class PRMerged extends SlackMessageTemplate {
+    constructor() {
+      super()
+    }
+    
+    buildMessage() {
+        // Add message title
+        let title = `${EMOJIS.MERGED} PR merged : ${getRepositoryNameOnly()}`
+        this.blocks.push(
+            SlackBlocks.messageTitle(title)
+        );
+
+        super.buildCommonMessageBody()
+    }    
+}
+
+
 
 class UnknownMessage extends SlackMessageTemplate {
     constructor() {
@@ -310,16 +490,88 @@ class UnknownMessage extends SlackMessageTemplate {
     
     buildMessage() {
         this.blocks.push(SlackBlocks.section("*[UnknownMessage]*"))
+        // todo - pass some context about the PR so this can be troubleshoot'd
     }    
 }
 
 
 
 async function run(){
-
-    console.log("github.context:")
-    console.log(github.context)
-    console.log("END github.context:")
+github.context.payload.repository.full_name
+    /**
+     * github.context log:
+     * 
+     Context {
+        payload: {
+            inputs: null,
+            ref: 'refs/heads/master',
+            repository: {
+                allow_forking: true,
+                archive_url: 'https://api.github.com/repos/braddevelop/ghworkflows-sandbox/{archive_format}{/ref}',
+                archived: false,
+                assignees_url: 'https://api.github.com/repos/braddevelop/ghworkflows-sandbox/assignees{/user}',
+                blobs_url: 'https://api.github.com/repos/braddevelop/ghworkflows-sandbox/git/blobs{/sha}',
+                branches_url: 'https://api.github.com/repos/braddevelop/ghworkflows-sandbox/branches{/branch}',
+                clone_url: 'https://github.com/braddevelop/ghworkflows-sandbox.git',
+                collaborators_url: 'https://api.github.com/repos/braddevelop/ghworkflows-sandbox/collaborators{/collaborator}',
+                comments_url: 'https://api.github.com/repos/braddevelop/ghworkflows-sandbox/comments{/number}',
+                commits_url: 'https://api.github.com/repos/braddevelop/ghworkflows-sandbox/commits{/sha}',
+                compare_url: 'https://api.github.com/repos/braddevelop/ghworkflows-sandbox/compare/{base}...{head}',
+                contents_url: 'https://api.github.com/repos/braddevelop/ghworkflows-sandbox/contents/{+path}',
+                contributors_url: 'https://api.github.com/repos/braddevelop/ghworkflows-sandbox/contributors',
+                created_at: '2022-12-08T14:25:30Z',
+                default_branch: 'master',
+                deployments_url: 'https://api.github.com/repos/braddevelop/ghworkflows-sandbox/deployments',
+                description: null,
+                disabled: false,
+                downloads_url: 'https://api.github.com/repos/braddevelop/ghworkflows-sandbox/downloads',
+                events_url: 'https://api.github.com/repos/braddevelop/ghworkflows-sandbox/events',
+                fork: false,
+                forks: 0,
+                forks_count: 0,
+                forks_url: 'https://api.github.com/repos/braddevelop/ghworkflows-sandbox/forks',
+                full_name: 'braddevelop/ghworkflows-sandbox',
+                git_commits_url: 'https://api.github.com/repos/braddevelop/ghworkflows-sandbox/git/commits{/sha}',
+                git_refs_url: 'https://api.github.com/repos/braddevelop/ghworkflows-sandbox/git/refs{/sha}',
+                git_tags_url: 'https://api.github.com/repos/braddevelop/ghworkflows-sandbox/git/tags{/sha}',
+                git_url: 'git://github.com/braddevelop/ghworkflows-sandbox.git',
+                has_discussions: false,
+                has_downloads: true,
+                has_issues: true,
+                has_pages: false,
+                has_projects: true,
+                has_wiki: true,
+                homepage: null,
+                hooks_url: 'https://api.github.com/repos/braddevelop/ghworkflows-sandbox/hooks',
+                html_url: 'https://github.com/braddevelop',
+                id: 69210311,
+                login: 'braddevelop',
+                node_id: 'MDQ6VXNlcjY5MjEwMzEx',
+                organizations_url: 'https://api.github.com/users/braddevelop/orgs',
+                received_events_url: 'https://api.github.com/users/braddevelop/received_events',
+                repos_url: 'https://api.github.com/users/braddevelop/repos',
+                site_admin: false,
+                starred_url: 'https://api.github.com/users/braddevelop/starred{/owner}{/repo}',
+                subscriptions_url: 'https://api.github.com/users/braddevelop/subscriptions',
+                type: 'User',
+                url: 'https://api.github.com/users/braddevelop'
+            },
+            workflow: '.github/workflows/pass-github-context.yml'
+        },
+        eventName: 'workflow_dispatch',
+        sha: 'd538b50379f17e916c8d0ad72fb792db5eae6470',
+        ref: 'refs/heads/master',
+        workflow: 'Pass the github context to a 3rd party action',
+        action: 'get_slack_body',
+        actor: 'braddevelop',
+        job: 'foobar',
+        runNumber: 33,
+        runId: 3702028989,
+        apiUrl: 'https://api.github.com',
+        serverUrl: 'https://github.com',
+        graphqlUrl: 'https://api.github.com/graphql'
+    }
+     */
 
 
     // if: github.event_name == 'pull_request_review' && github.event.review.state != 'approved' && github.event.pull_request.base.ref == 'master'.
@@ -380,14 +632,131 @@ function streamsReceived(data){
     // const dataFromPromise1 = data[0]
     // const dataFromPromise2 = data[1]
     prdata.context = data[0]
-    prdata.reviews = data[1]
+    prdata.reviews = data[1].data
 
     
-    console.log('test group log')
-    console.group("prdata")
-    console.log(prdata)
-    console.groupEnd()
-    console.log('END:test group log')
+    /**
+     * prdata logged:
+     
+    {
+        context: {
+            status: 200,
+            url: 'https://api.github.com/repos/braddevelop/ghworkflows-sandbox/pulls/17',
+            headers: {
+                'access-control-allow-origin': '*',
+                'access-control-expose-headers': 'ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes, X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO, X-GitHub-Request-Id, Deprecation, Sunset',
+                'cache-control': 'private, max-age=60, s-maxage=60',
+                connection: 'close',
+                'content-encoding': 'gzip',
+                'content-security-policy': "default-src 'none'",
+                'content-type': 'application/json; charset=utf-8',
+                date: 'Thu, 15 Dec 2022 07:35:16 GMT',
+                etag: 'W/"faf40bf2f9d96e958affeeaf1ec06aeeea23cea11e2f611fe5815014330ca542"',
+                'github-authentication-token-expiration': '2023-01-13 14:04:58 +0200',
+                'last-modified': 'Tue, 13 Dec 2022 19:54:34 GMT',
+                'referrer-policy': 'origin-when-cross-origin, strict-origin-when-cross-origin',
+                server: 'GitHub.com',
+                auto_merge: null,
+                active_lock_reason: null,
+                merged: false,
+                mergeable: null,
+                rebaseable: null,
+                mergeable_state: 'unknown',
+                merged_by: null,
+                comments: 0,
+                review_comments: 0,
+                maintainer_can_modify: false,
+                commits: 1,
+                additions: 1,
+                deletions: 1,
+                changed_files: 1
+            },
+            data: {
+                url: 'https://api.github.com/repos/braddevelop/ghworkflows-sandbox/pulls/17',
+                id: 1163292360,
+                node_id: 'PR_kwDOIlNd3s5FVm7I',
+                html_url: 'https://github.com/braddevelop/ghworkflows-sandbox/pull/17',
+                diff_url: 'https://github.com/braddevelop/ghworkflows-sandbox/pull/17.diff',
+                patch_url: 'https://github.com/braddevelop/ghworkflows-sandbox/pull/17.patch',
+                issue_url: 'https://api.github.com/repos/braddevelop/ghworkflows-sandbox/issues/17',
+                number: 17,
+                state: 'open',
+                locked: false,
+                title: 'suki updates',
+                user: [Object],
+                body: null,
+                created_at: '2022-12-13T16:03:49Z',
+                updated_at: '2022-12-13T19:54:34Z',
+                closed_at: null,
+                merged_at: null,
+                merge_commit_sha: 'bbbf79789a64e23b9103b24c97052fe878121ea7',
+                assignee: null,
+                assignees: [],
+                requested_reviewers: [],
+                requested_teams: [],
+                labels: [],
+                milestone: null,
+                draft: false,
+                commits_url: 'https://api.github.com/repos/braddevelop/ghworkflows-sandbox/pulls/17/commits',
+                review_comments_url: 'https://api.github.com/repos/braddevelop/ghworkflows-sandbox/pulls/17/comments',
+                review_comment_url: 'https://api.github.com/repos/braddevelop/ghworkflows-sandbox/pulls/comments{/number}',
+                comments_url: 'https://api.github.com/repos/braddevelop/ghworkflows-sandbox/issues/17/comments',
+                statuses_url: 'https://api.github.com/repos/braddevelop/ghworkflows-sandbox/statuses/476ca9b4857051e288a44df44c1872317f48fe5c',
+                head: [Object],
+                base: [Object],
+                _links: [Object],
+                author_association: 'COLLABORATOR',
+                auto_merge: null,
+                active_lock_reason: null,
+                merged: false,
+                mergeable: null,
+                rebaseable: null,
+                mergeable_state: 'unknown',
+                merged_by: null,
+                comments: 0,
+                review_comments: 0,
+                maintainer_can_modify: false,
+                commits: 1,
+                additions: 1,
+                deletions: 1,
+                changed_files: 1
+            }
+        },
+        reviews: {
+            status: 200,
+            url: 'https://api.github.com/repos/braddevelop/ghworkflows-sandbox/pulls/17/reviews',
+            headers: {
+                'access-control-allow-origin': '*',
+                'access-control-expose-headers': 'ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes, X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO, X-GitHub-Request-Id, Deprecation, Sunset',
+                'cache-control': 'private, max-age=60, s-maxage=60',
+                connection: 'close',
+                'content-encoding': 'gzip',
+                'content-security-policy': "default-src 'none'",
+                'content-type': 'application/json; charset=utf-8',
+                date: 'Thu, 15 Dec 2022 07:35:16 GMT',
+                etag: 'W/"07dba8d8ce997465cb2a2f4d35316dc0d210053c3158b7d547c3d2b7490c4dcc"',
+                'github-authentication-token-expiration': '2023-01-13 14:04:58 +0200',
+                'referrer-policy': 'origin-when-cross-origin, strict-origin-when-cross-origin',
+                server: 'GitHub.com',
+                'strict-transport-security': 'max-age=31536000; includeSubdomains; preload',
+                'transfer-encoding': 'chunked',
+                vary: 'Accept, Authorization, Cookie, X-GitHub-OTP, Accept-Encoding, Accept, X-Requested-With',
+                'x-content-type-options': 'nosniff',
+                'x-frame-options': 'deny',
+                'x-github-api-version-selected': '2022-11-28',
+                'x-github-media-type': 'github.v3; format=json',
+                'x-github-request-id': '0683:45E3:722C70:EAD496:639ACE34',
+                'x-ratelimit-limit': '5000',
+                'x-ratelimit-remaining': '4999',
+                'x-ratelimit-reset': '1671093316',
+                'x-ratelimit-resource': 'core',
+                'x-ratelimit-used': '1',
+                'x-xss-protection': '0'
+            },
+            data: [ [Object], [Object], [Object] ]
+        }
+    }
+     */
 
     outputMessage()
 }
@@ -401,30 +770,40 @@ function outputMessage(){
 function getTypeOfMessage(prContext, prReviews){
 
     if(prContext.merged){
-        console.warn("getTypeOfMessage() prContext.merged == true:")
-        return 'MERGED'
+        return PR_STATES.MERGED
     }
 
     let lastReview = getLastReview(prReviews)
-    console.log('lastReview')
+    console.group("lastReview")
     console.log(lastReview)
-    console.log('END:lastReview')
+    console.groupEnd()
     if(lastReview && lastReview.hasOwnProperty('state')){
         return lastReview.state
     }
     
-    return 'UNKNOWN'
+    return PR_STATES.UNKNOWN
 }
 
 function getMessageFromFactory(type){
     switch (type) {
-        case 'COMMENT':
+        case PR_STATES.COMMENT:
             return new PRReviewComment().output()
-        case 'CHANGES_REQUESTED':
+        case PR_STATES.CHANGES_REQUESTED:
             return new PRReviewChangeRequest().output()
+        case  PR_STATES.MERGED:
+            return new PRMerged().output()
+        case  PR_STATES.APPROVED:
+            return new PRApproved().output()
         default:
             return new UnknownMessage().output()
     }
+}
+
+function getRepositoryFullName(){
+    return github.context.payload.repository.full_name
+}
+function getRepositoryNameOnly(){
+    return github.context.payload.repository.full_name.split('/')[1];
 }
 
 run();
