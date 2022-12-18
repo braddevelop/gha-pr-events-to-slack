@@ -306,7 +306,7 @@ function requestDataForPullRequest(){
 
 function pullRequestDataReceived(data){
     pullRequestData.context = data[0]
-    pullRequestData.reviews = data[1].datac
+    pullRequestData.reviews = data[1].data
 
     console.group("prcontext")
     console.log(pullRequestData.context)
