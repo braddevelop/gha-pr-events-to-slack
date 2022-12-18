@@ -4,6 +4,7 @@ const github = require('@actions/github');
 const repoAccessToken = core.getInput('repoAccessToken');
 const pullNumber = core.getInput('pullNumber');
 const repo = core.getInput('repo');
+const triggeringActor = core.getInput('triggeringActor');
 const octokit = github.getOctokit(repoAccessToken)
 
 // Convenience object to store retrieved pull request data
@@ -133,9 +134,9 @@ class SlackMessageBase {
         this.footer.push(
             {
                 "color": statusColour,
-                "author_name": `${actorActionText} ${getLastReview(pullRequestData.reviews).user.login}`,
-                "author_link": getLastReview(pullRequestData.reviews).user.html_url,
-                "author_icon": getLastReview(pullRequestData.reviews).user.avatar_url,
+                "author_name": `${actorActionText} ${getTriggeringActor()}`,
+                // "author_link": getLastReview(pullRequestData.reviews).user.html_url,
+                // "author_icon": getLastReview(pullRequestData.reviews).user.avatar_url,
                 "title": "View pull request",
                 "title_link": pullRequestData.context.data.html_url,
             }
@@ -280,7 +281,7 @@ function getLastReview(reviews){
 }
 
 function getTriggeringActor(){
-
+    return triggeringActor
 }
 
 /**
