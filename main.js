@@ -133,7 +133,7 @@ class SlackMessageBase {
         this.footer.push(
             {
                 "color": statusColour,
-                "author_name": `${actorActionText} ${getLastReview(pullRequestData.reviews).user.login}`, //
+                "author_name": `${actorActionText} ${getLastReview(pullRequestData.reviews).user.login}`,
                 "author_link": getLastReview(pullRequestData.reviews).user.html_url,
                 "author_icon": getLastReview(pullRequestData.reviews).user.avatar_url,
                 "title": "View pull request",
