@@ -320,15 +320,21 @@ function pullRequestDataReceived(data){
  * Action outputs
  */
 function outputMessage(pullRequestData){
-    core.setOutput('slackMessage',messageFactory(getTypeOfMessage(pullRequestData.context, pullRequestData.reviews)))
+    core.setOutput(
+        'slackMessage',
+        messageFactory(
+            getTypeOfMessage(pullRequestData),
+            pullRequestData
+        )
+    )
 }
 
-function getTypeOfMessage(prContext, prReviews){
-    if(prContext.data.merged){
+function getTypeOfMessage(pullRequestData){
+    if(pullRequestData.context.data.merged){
         return PR_STATES.MERGED
     }
 
-    let lastReview = getLastReview(prReviews)
+    let lastReview = getLastReview(pullRequestData.reviews)
   
     if(lastReview){
         return lastReview.state
@@ -337,18 +343,18 @@ function getTypeOfMessage(prContext, prReviews){
     return PR_STATES.UNKNOWN
 }
 
-function messageFactory(type){
+function messageFactory(type, pullRequestData){
     switch (type) {
         case PR_STATES.COMMENTED:
-            return new PullRequestReviewComment().output()
+            return new PullRequestReviewComment(pullRequestData).output()
         case PR_STATES.CHANGES_REQUESTED:
-            return new PullRequestReviewChangeRequest().output()
+            return new PullRequestReviewChangeRequest(pullRequestData).output()
         case  PR_STATES.MERGED:
-            return new PullRequestMerged().output()
+            return new PullRequestMerged(pullRequestData).output()
         case  PR_STATES.APPROVED:
-            return new PullRequestApproved().output()
+            return new PullRequestApproved(pullRequestData).output()
         default:
-            return new UnknownMessage().output()
+            return new UnknownMessage(pullRequestData).output()
     }
 }
 
