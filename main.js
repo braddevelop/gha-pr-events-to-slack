@@ -1,13 +1,16 @@
 const core = require('@actions/core')
-const github = require('@actions/github');
+const github = require('@actions/github')
 
-const repoAccessToken = core.getInput('repoAccessToken');
-const pullNumber = core.getInput('pullNumber');
-const repo = core.getInput('repo');
-const triggeringActor = core.getInput('triggeringActor');
+// Load `inputs`
+const repoAccessToken = core.getInput('repoAccessToken')
+const pullNumber = core.getInput('pullNumber')
+const repo = core.getInput('repo')
+const triggeringActor = core.getInput('triggeringActor')
+
+// Init Octokit (GitHub SDK for Node.js)
 const octokit = github.getOctokit(repoAccessToken)
 
-// Convenience object to store retrieved pull request data
+// Convenience value object to store retrieved pull request data
 const pullRequestData = {
     context:{},
     reviews:{}
@@ -39,7 +42,8 @@ const PR_STATES_EMOJIS = {
 
 /**
  * SlackBlocks
- * Utility to build opinionated message blocks
+ * 
+ * Utility to build message blocks
  * @see https://api.slack.com/messaging/composing/layouts
  */
 class SlackBlocks {
@@ -101,10 +105,12 @@ class SlackBlocks {
  */
 class SlackMessageBase {
 
+    pullRequestData = null;
     blocks = [];
     footer = [];
 
-    constructor() {
+    constructor(pullRequestData) {
+        this.pullRequestData = pullRequestData
         this.buildMessage()
     }
 
@@ -116,15 +122,15 @@ class SlackMessageBase {
         // Add PR Title and refs
         this.blocks.push(
             SlackBlocks.prTitleAndRefs(
-                pullRequestData.context.data.title, 
-                pullRequestData.context.data.base.ref, 
-                pullRequestData.context.data.head.ref
+                this.pullRequestData.context.data.title, 
+                this.pullRequestData.context.data.base.ref, 
+                this.pullRequestData.context.data.head.ref
             )
         );
 
         // Add PR author
         this.blocks.push(
-            SlackBlocks.prAuthor(pullRequestData.context.data.user.login)
+            SlackBlocks.prAuthor(this.pullRequestData.context.data.user.login)
         )
 
         this.blocks.push(SlackBlocks.divider())
@@ -138,7 +144,7 @@ class SlackMessageBase {
                 // "author_link": getLastReview(pullRequestData.reviews).user.html_url,
                 // "author_icon": getLastReview(pullRequestData.reviews).user.avatar_url,
                 "title": "View pull request",
-                "title_link": pullRequestData.context.data.html_url,
+                "title_link": this.pullRequestData.context.data.html_url,
             }
         )
     }
@@ -149,8 +155,8 @@ class SlackMessageBase {
 }
 
 class PullRequestReviewComment extends SlackMessageBase {
-    constructor() {
-      super()
+    constructor(pullRequestData) {
+      super(pullRequestData)
     }
     
     buildMessage() {
@@ -175,8 +181,8 @@ class PullRequestReviewComment extends SlackMessageBase {
 
 
 class PullRequestReviewChangeRequest extends SlackMessageBase {
-    constructor() {
-      super()
+    constructor(pullRequestData) {
+        super(pullRequestData)
     }
     
     buildMessage() {
@@ -198,8 +204,8 @@ class PullRequestReviewChangeRequest extends SlackMessageBase {
 }
 
 class PullRequestApproved extends SlackMessageBase {
-    constructor() {
-      super()
+    constructor(pullRequestData) {
+        super(pullRequestData)
     }
     
     buildMessage() {
@@ -222,8 +228,8 @@ class PullRequestApproved extends SlackMessageBase {
 
 
 class PullRequestMerged extends SlackMessageBase {
-    constructor() {
-      super()
+    constructor(pullRequestData) {
+        super(pullRequestData)
     }
     
     buildMessage() {
@@ -240,8 +246,8 @@ class PullRequestMerged extends SlackMessageBase {
 }
 
 class UnknownMessage extends SlackMessageBase {
-    constructor() {
-      super()
+    constructor(pullRequestData) {
+        super(pullRequestData)
     }
     
     buildMessage() {
@@ -249,8 +255,7 @@ class UnknownMessage extends SlackMessageBase {
         let title = `${PR_STATES_EMOJIS.UNKNOWN} Unknown PR event : ${getRepositoryNameOnly()}`
         this.blocks.push(
             SlackBlocks.messageTitle(title)
-        );
-        // todo - pass some context about the PR so this can be troubleshoot'd
+        )
     }    
 }
 
@@ -266,11 +271,11 @@ function getRepositoryFullName(){
 }
 
 function getRepositoryNameOnly(){
-    return repo.split('/')[1];
+    return repo.split('/')[1]
 }
 
-function getAccountOwner(){
-    return repo.split('/')[0];
+function getGithubAccountOwner(){
+    return repo.split('/')[0]
 }
 
 function getLastReview(reviews){
@@ -289,18 +294,18 @@ function getTriggeringActor(){
  */
 function requestDataForPullRequest(){
     const pullRequestContext = octokit.rest.pulls.get({
-        owner: getAccountOwner(),
+        owner: getGithubAccountOwner(),
         repo: getRepositoryNameOnly(),
         pull_number: getPullRequestNumber()
     })
 
     const pullRequestReviews = octokit.rest.pulls.listReviews({
-        owner: getAccountOwner(),
+        owner: getGithubAccountOwner(),
         repo: getRepositoryNameOnly(),
         pull_number: getPullRequestNumber()
     })
 
-    Promise.all([pullRequestContext, pullRequestReviews]).then(pullRequestDataReceived, console.log)
+    return Promise.all([pullRequestContext, pullRequestReviews])
 }
 
 
@@ -308,21 +313,14 @@ function pullRequestDataReceived(data){
     pullRequestData.context = data[0]
     pullRequestData.reviews = data[1].data
 
-    console.group("prcontext")
-    console.log(pullRequestData.context)
-    console.groupEnd()
-
-    console.group("prreview data")
-    console.log(pullRequestData.reviews)
-    console.groupEnd()
-    outputMessage()
+    outputMessage(pullRequestData)
 }
 
 /**
  * Action outputs
  */
-function outputMessage(){
-    core.setOutput('slackMessage',messageFactory(getTypeOfMessage(pullRequestData.context, pullRequestData.reviews)));
+function outputMessage(pullRequestData){
+    core.setOutput('slackMessage',messageFactory(getTypeOfMessage(pullRequestData.context, pullRequestData.reviews)))
 }
 
 function getTypeOfMessage(prContext, prReviews){
@@ -358,8 +356,8 @@ function messageFactory(type){
  * Program entry point
  */
 async function run(){
-    requestDataForPullRequest()
+    requestDataForPullRequest().then(pullRequestDataReceived, console.log)
 }
 
-// Kickstart
-run();
+// Start
+run()

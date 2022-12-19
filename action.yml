@@ -1,27 +1,21 @@
 name: 'Pull Request Events to Slack'
-description: 'Notifies Slack about Pull Request events'
+description: 'Notify Slack about Pull Request events'
 inputs:
   repoAccessToken:
-    description: 'repoAccessToken'
+    description: 'A repository Personal Access Token (PAT)'
     required: true
   repo:
-    description: 'repo name with owner in the front'
+    description: 'The repo to listen to for pull request events. Format is <OWNER>/<REPOSITORY>'
     required: true
-  # owner:
-  #   description: 'owner of repo'
-  #   required: true
   pullNumber:
-    description: 'pullNumber'
-    required: false
-    default: '1'
+    description: 'The pull request number to reference'
+    required: true
   triggeringActor:
-    description: 'trigggerActor'
+    description: 'The user/account that triggered the pull request event. I.e. Left a comment, change request, approved or merged a PR'
     required: true
 outputs:
   slackMessage:
     description: 'Slack message body'
 runs:
   using: "node16"
-  pre: "pre.js"
-  pre-if: runner.os == 'linux'
   main: "main.js"
